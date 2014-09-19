@@ -99,6 +99,7 @@ class BaseConfig(object):
     def __init__(self,
                  name=None,
                  description=None,
+                 default_obj = None,
                  read_file_path=None,
                  write_file_path=None,
                  property_type=None,
@@ -110,6 +111,9 @@ class BaseConfig(object):
         read, write, map, save, compare, and validate python attributes to a
         json configuration.
         :param name: string. The name of this config section
+        :param description: string. A description to be presented in json config.
+        :param default_obj: instance of the immediate class to be used to build default values
+                            of the _json_properties/config.
         :param read_file_path: Optional. String. Local path this config obj
                                  should read from
         :param write_file_path: Optional. String. Local path this config obj
@@ -126,15 +130,18 @@ class BaseConfig(object):
         version = version or config_manager.__version__
         # Now overwrite with any params provided
         self.name = self.create_property('name', name)
-        self.property_type = self.create_property('property_type',
+        self._property_type = self.create_property('_config_property_type',
                                                   property_type)
-        self.version = self.create_property('version', version)
-        self.description = self.create_property('description', description)
+        self._version = self.create_property('_config_version', version)
+        self._description = self.create_property('_config_description', description)
 
         self.read_file_path = read_file_path
         self.write_file_path = write_file_path
         if self.read_file_path:
             self.update_from_file()
+        self.default_obj = default_obj
+        if self.default_obj:
+            self.set_defaults_from_object(self.default_obj)
 
     @property
     def eucalyptus_properties(self):
@@ -272,6 +279,25 @@ class BaseConfig(object):
                     raise
         return newdict
 
+    def set_defaults_from_object(self, default_obj):
+        """
+        Sets unpopulated values with values from a 'default_obj' instance of the same class
+        """
+        if not isinstance(default_obj, self.__class__):
+            raise ValueError('update_from_object obj type:"{0}" is not of type "{1}"'
+                             .format(type(default_obj), self.__class__.__name__))
+        for key in default_obj._json_properties:
+            default_value = default_obj._json_properties[key]
+            if not default_value:
+                continue
+            if key in self._json_properties:
+                config_prop = self.get_attr_by_json_name(key)
+                if not config_prop.value:
+                    config_prop.value = default_value
+                elif isinstance(config_prop.value, BaseConfig):
+                    config_prop.value.set_defaults_from_object(default_value)
+
+
     def update_from_file(self, file_path=None):
         file_path = file_path or self.read_file_path
         if not file_path:
@@ -375,3 +401,22 @@ class BaseConfig(object):
                     isinstance(attr.value, BaseConfig):
                 property_dict.update(attr.value._aggregate_eucalyptus_properties(show_all=show_all))
         return property_dict
+
+    def _validate_is_bool(self, value, allow_none=True):
+        if value is None:
+            if allow_none:
+                return None
+        if str(value).upper() == "TRUE":
+            return True
+        elif str(value).upper() == "FALSE":
+            return False
+        raise ValueError('Bad boolean value:"{0}"'.format(value))
+
+    def _validate_is_number(self, value, allow_none=True):
+        if value is None:
+            if allow_none:
+                return None
+        return float(value)
+
+
+

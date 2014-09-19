@@ -22,6 +22,7 @@ class Euca_Machine(Machine_Config):
     def __init__(self,
                  hostname,
                  name=None,
+                 default_obj=None,
                  description=None,
                  read_file_path=None,
                  write_file_path=None,
@@ -32,12 +33,13 @@ class Euca_Machine(Machine_Config):
                                                      value=Euca_Conf_File())
 
         super(Euca_Machine, self).__init__(hostname=hostname,
-                                             name=name,
-                                             description=description,
-                                             read_file_path=read_file_path,
-                                             write_file_path=write_file_path,
-                                             property_type=property_type,
-                                             version=version)
+                                           name=name,
+                                           description=description,
+                                           default_obj=default_obj,
+                                           read_file_path=read_file_path,
+                                           write_file_path=write_file_path,
+                                           property_type=property_type,
+                                           version=version)
 
 
     @property

@@ -34,6 +34,10 @@ from config_manager.eucalyptus.topology.cluster.blockstorage.netapp import Netap
 from config_manager.eucalyptus.topology.cluster.blockstorage.netapp_cluster import Netapp_Cluster
 from config_manager.eucalyptus.topology.cluster.blockstorage.overlay import Overlay
 
+from config_manager.eucalyptus.topology.cluster.network.edge_network_config import Edge_Network_Config
+from config_manager.eucalyptus.topology.cluster.network.managed_network_config import Managed_Network_Config
+from config_manager.eucalyptus.topology.cluster.network.managed_novlan_network_config import Managed_Novlan_Network_Config
+
 
 _HYPERVISORS = {str(Esxi.__name__).lower(): Esxi,
                 str(Hyperv.__name__).lower(): Hyperv,
@@ -49,6 +53,12 @@ _BLOCKSTORAGE_TYPES = {str(Ceph.__name__).lower(): Ceph,
                        str(Netapp.__name__).lower(): Netapp,
                        str(Netapp_Cluster.__name__).lower(): Netapp_Cluster,
                        str(Overlay.__name__).lower(): Overlay}
+
+_NETWORK_TYPES = modes = {
+        'EDGE': Edge_Network_Config,
+        'MANAGED': Managed_Network_Config,
+        'MANAGED_NOVLAN': Managed_Novlan_Network_Config
+    }
 
 
 class Cluster(BaseConfig):
@@ -147,9 +157,10 @@ class Cluster(BaseConfig):
         self.cluster_controllers = self.create_property('cluster_controllers', value=[])
 
         # Store the cluster wide hypervisor type and list of node objects...
+        self.nodes = self.create_property('nodes', value=[])
         self.hypervisor_type = self.create_property(
             'hypervisor_type', value=hypervisor, validate_callback=self.validate_hypervisor_type)
-        self.nodes = self.create_property('nodes', value=[])
+
 
         # todo decide if this is needed, or if esx node types are enough/better...
         self.vmware_brokers = self.create_property('vmware_brokers', value=None)
@@ -277,7 +288,7 @@ class Cluster(BaseConfig):
         if not self.hypervisor_type.value:
             raise ValueError('Must set "hypervisor_type" in cluster before adding nodes')
         node_class = _HYPERVISORS[self.hypervisor_type.value]
-        new_node = node_class(name=ip,
+        new_node = node_class(hostname=ip,
                               read_file_path=read_file_path,
                               write_file_path=write_file_path,
                               description=description,

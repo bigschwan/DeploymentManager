@@ -20,16 +20,18 @@ from config_manager.eucalyptus.topology.cluster.nodecontroller import NodeContro
 class Esxi(NodeController):
 
     def __init__(self,
-                 name,
+                 hostname,
                  description=None,
+                 default_obj=None,
                  read_file_path=None,
                  write_file_path=None,
                  property_type=None,
                  version=None
                  ):
         # Baseconfig init() will read in default values from read_file_path if it is populated.
-        super(Esxi, self).__init__(name=name,
+        super(Esxi, self).__init__(hostname=hostname,
                                    hypervisor=str(self.__class__.__name__).lower(),
+                                   default_obj=default_obj,
                                    description=description,
                                    read_file_path=read_file_path,
                                    write_file_path=write_file_path,

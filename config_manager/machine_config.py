@@ -21,6 +21,7 @@ class Machine_Config(BaseConfig):
     def __init__(self,
                  hostname,
                  name=None,
+                 default_obj=None,
                  description=None,
                  read_file_path=None,
                  write_file_path=None,
@@ -31,6 +32,7 @@ class Machine_Config(BaseConfig):
                                              description='IP address or FQDN of machine')
         name = name or "Machine: {0}".format(self.hostname.value)
         super(Machine_Config, self).__init__(name=name,
+                                             default_obj=default_obj,
                                              description=description,
                                              read_file_path=read_file_path,
                                              write_file_path=write_file_path,

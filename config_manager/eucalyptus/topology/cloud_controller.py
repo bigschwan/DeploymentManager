@@ -14,7 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from config_manager.eucalyptus.euca_machine import Euca_Machine
 
-class CloudController:
-    def __init__(self, hostname):
-        self.hostname = hostname
+class CloudController(Euca_Machine):
+    def __init__(self,
+                 hostname,
+                 default_obj=None,
+                 read_file_path=None,
+                 write_file_path=None,
+                 description=None,
+                 version=None):
+        description = description or "Eucalyptus Cloud Controller Configuration Block"
+        super(CloudController, self).__init__(hostname=hostname,
+                                              default_obj=default_obj,
+                                              description=description,
+                                              write_file_path=write_file_path,
+                                              read_file_path=read_file_path,
+                                              version=version)

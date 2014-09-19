@@ -28,9 +28,9 @@ class Topology(BaseConfig):
                  write_file_path=None,
                  version=None):
         description = description or "Eucalyptus Cloud Topology Configuration Block"
-        self.cloud_controllers = self.create_property('cloud_controller')
-        self.walrus = self.create_property('walrus')
-        self.user_facing_services = self.create_property('user_facing')
+        self.cloud_controllers = self.create_property('cloud_controllers', value=[])
+        self.object_storage = self.create_property('object_storage')
+        self.user_facing_services = self.create_property('user_facing_services')
         self.clusters_property = self.create_property('clusters', value={})
         super(Topology, self).__init__(name=name,
                                        description=description,
@@ -38,7 +38,7 @@ class Topology(BaseConfig):
                                        read_file_path=read_file_path,
                                        version=version)
 
-    def add_clusters(self, clusters):
+    def _add_clusters(self, clusters):
         if not clusters:
             raise ValueError('add_clusters provided empty value: "{0}"'
                              .format(clusters))
@@ -57,7 +57,7 @@ class Topology(BaseConfig):
     def create_cluster(self, name, hypervisor, read_file_path=None, write_file_path=None):
         cluster = Cluster(name=name, hypervisor=hypervisor, read_file_path=read_file_path,
                           write_file_path=write_file_path)
-        self.add_clusters(cluster)
+        self._add_clusters(cluster)
         return cluster
 
     def get_cluster(self, clustername):
@@ -65,27 +65,55 @@ class Topology(BaseConfig):
             return self.clusters_property.value[clustername]
         return None
 
-    def delete_cluster(self, clustername):
-        if clustername in self.clusters_property.value:
-            self.clusters_property.value.pop(clustername)
+    def delete_cluster(self, cluster):
+        if isinstance(cluster, Cluster):
+            cluster = cluster.name.value
+        if cluster in self.clusters_property.value:
+            self.clusters_property.value.pop(cluster)
         else:
-            print 'clustername:"{0}" not in cluster list'.format(clustername)
+            print 'clustername:"{0}" not in cluster list'.format(cluster)
 
-    def add_cloud_controllers(self, clcs):
+    def _add_cloud_controllers(self, clcs):
         if clcs is None:
             raise ValueError('add_cloud_controllers provided empty '
                              'value: "{0}"'.format(clcs))
         if not isinstance(clcs, list):
             clcs = [clcs]
-        if self.cloud_controllers_property is None:
-            self.cloud_controllers_property = []
+        if self.cloud_controllers.value is None:
+            self.cloud_controllers = []
         for clc in clcs:
-            self.cloud_controllers_property.value.append(clc)
+            if not isinstance(clc, CloudController):
+                raise ValueError('_add_cloud_controllers requires CloudController type, '
+                                 'provided:"{0}"'.format(type(clc)))
+            if self.get_cloud_controller(clc.hostname.value):
+                raise ValueError('Cloud controller with hostname already exists: "{0}"'
+                                 .format(clc.hostname))
+            self.cloud_controllers.value.append(clc)
 
-    def add_walrus(self, walrus):
+    def create_cloud_controller(self, hostname, default_obj=None,
+                                read_file_path=None, write_file_path=None):
+        clc = CloudController(hostname=hostname, default_obj=default_obj,
+                              read_file_path=read_file_path, write_file_path=write_file_path)
+        self._add_cloud_controllers(clc)
+        return clc
+
+    def get_cloud_controller(self, hostname):
+        if self.cloud_controllers.value:
+            for clc in self.cloud_controllers.value:
+                if clc.hostname.value == hostname:
+                    return clc
+        return None
+
+    def delete_cloud_controller(self, hostname):
+        clc = self.get_cloud_controller(hostname)
+        if clc:
+            self.cloud_controllers.value.remove(clc)
+
+
+    def _add_walrus(self, walrus):
         self.walrus = walrus
 
-    def add_user_facing_services(self, user_facing_services):
+    def _add_user_facing_services(self, user_facing_services):
         self.user_facing_services = user_facing_services
 
     def _aggregate_eucalyptus_properties(self, show_all=False):

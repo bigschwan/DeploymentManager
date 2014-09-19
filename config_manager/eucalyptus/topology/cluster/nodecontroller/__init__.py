@@ -13,13 +13,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from config_manager.baseconfig import BaseConfig
+from config_manager.eucalyptus.euca_machine import Euca_Machine
 
 
-class NodeController(BaseConfig):
+class NodeController(Euca_Machine):
     def __init__(self,
-                 name,
+                 hostname,
                  hypervisor,
+                 default_obj=None,
                  read_file_path=None,
                  write_file_path=None,
                  description=None,
@@ -41,7 +42,8 @@ class NodeController(BaseConfig):
 
         # Use validator to make the hypervisor name read-only
         self.hypervisor.validate = lambda x: self.hypervisor.value
-        super(NodeController, self).__init__(name=name,
+        super(NodeController, self).__init__(hostname=hostname,
+                                             default_obj=default_obj,
                                              description=description,
                                              write_file_path=write_file_path,
                                              read_file_path=read_file_path,

@@ -15,12 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from config_manager.baseconfig import BaseConfig
-from config_manager.eucalyptus.topology.cluster.network.edge_network_config \
-    import Edge_Network_Config
-from config_manager.eucalyptus.topology.cluster.network.managed_network_config \
-    import Managed_Network_Config
-from config_manager.eucalyptus.topology.cluster.network.managed_novlan_network_config \
-    import Managed_Novlan_Network_Config
+from config_manager.eucalyptus.euca_machine import Euca_Machine
+
 
 import copy
 import ipaddr
@@ -29,14 +25,9 @@ import math
 
 
 class Network(BaseConfig):
-    modes = {
-        'EDGE': Edge_Network_Config,
-        'MANAGED': Managed_Network_Config,
-        'MANAGED_NOVLAN': Managed_Novlan_Network_Config
-    }
+    _network_mode = None
 
     def __init__(self,
-                 mode=None,
                  name=None,
                  description=None,
                  read_file_path=None,
@@ -46,14 +37,26 @@ class Network(BaseConfig):
                  network_type=None):
 
         description = description or "Eucalyptus Network Configuration Block"
-
+        self._class_name = self.create_property(
+            json_name='network_class',
+            value=self.__class__.__name__,
+            validate_callback=lambda x: self.__class__.__name__
+        )
+        self.default_cc_config = self.create_property(
+            json_name='default_cc_config',
+            value=Euca_Machine(),
+            description='Default values for cluster controller machine level configuration')
+        self.default_nc_config = self.create_property(
+            json_name='default_nc_config',
+            value=Euca_Machine(),
+            description='Default values for cluster controller machine level configuration')
         # Network Configuration properties...
         self.network_mode_configuration_property = self.create_property(
             'mode_configuration',
-            value=mode,
-            validate_callback=self._validate_network_mode_property,
-            description="Modes: MANAGED, MANAGED-NOVLAN, EDGE\n"
-                        "The networking mode in which to run. \n"
+            value=self._network_mode,
+            validate_callback=lambda x: self._network_mode,
+            description="Read only configuration property \n"
+                        "The networking mode for this configuration block. \n"
                         "The same mode must be specified on all CCs and NCs in your cloud"
         )
         self.instance_dns_server_property = self.create_property(
@@ -143,24 +146,6 @@ class Network(BaseConfig):
                                       write_file_path=write_file_path,
                                       property_type=property_type,
                                       version=version)
-
-
-
-    def _validate_network_mode_property(self, value):
-        if value:
-            if isinstance(value, str):
-                value = str(value).upper()
-                if self.modes.has_key(value):
-                    mode_class = self.modes[value]
-                    return mode_class()
-                raise ValueError('Invalid network mode:"{0}", valid options:'
-                                 .format(value, self.modes.keys()))
-            else:
-                for net_class in self.modes:
-                    if isinstance(value, net_class):
-                        return value
-                raise ValueError('Invalid network mode object:' + str(value))
-        return None
 
     def get_network_mode_config(self):
         return self.network_mode_configuration_property.value
@@ -423,8 +408,8 @@ class Network(BaseConfig):
         :returns: string of conflicting ip
         '''
         return self._check_ip_for_list_conflicts(ip_entry=ip_entry,
-                                        existing_list=existinglist,
-                                        err_on_conflict=False)
+                                                 existing_list=existinglist,
+                                                 err_on_conflict=False)
 
     def _get_ip_entry_range(self, entry):
         """

@@ -16,6 +16,7 @@
 from config_manager.baseconfig import BaseConfig, EucalyptusProperty
 from config_manager.eucalyptus.topology.cluster.blockstorage.storage_controller import \
     Storage_Controller
+from config_manager.eucalyptus.euca_machine import Euca_Machine
 
 
 class BlockStorage(BaseConfig):
@@ -34,6 +35,13 @@ class BlockStorage(BaseConfig):
 
         description = description or 'Eucalyptus Block Storage Configuration Block for ' \
                                      'backend:"{0}"'.format(self.storage_manager_name)
+        self._class_name = self.create_property(
+            json_name='storage_class',
+            value=self.__class__.__name__,
+            validate_callback=lambda x: self.__class__.__name__
+        )
+        self.default_sc_config = self.create_property(json_name='default_sc_config',
+                                                      value = Euca_Machine())
         # Create the Eucalyptus software specific properties
         self.eucalyptus_properties.blockstoragemanager = EucalyptusProperty(
             name=str(cluster_name) + '.storage.blockstoragemanager',

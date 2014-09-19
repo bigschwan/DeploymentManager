@@ -39,13 +39,15 @@ class Eucalyptus(BaseConfig):
         self.euca2ools_repo = self.create_property('euca2ools-repo')
         self.enterprise_repo = self.create_property('enterprise-repo')
         self.enterprise = self.create_property('enterprise')
-        self.nc = self.create_property('nc')
         self.topology = self.create_property('topology')
         self.network = self.create_property('network')
         self.system_properties = self.create_property('system_properties')
         self.install_load_balancer = self.create_property(
             'install-load-balancer', value=True)
-        self.install_imaging_worker = self.create_property('install-imaging-worker', value=True)
+        self.install_imaging_worker = self.create_property(
+            'install-imaging-worker',
+            value=None,
+            validate_callback=lambda x: self._validate_is_bool(x) )
         self.cloud_opts = self.create_property(json_name='cloud_opts', value=[])
 
         super(Eucalyptus, self).__init__(name=None,
